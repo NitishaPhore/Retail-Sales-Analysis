@@ -1,0 +1,89 @@
+-- Total Orders
+select count(distinct order_id) as Total_Orders from orders;
+--Total sales
+SELECT sum(price) as Total_sales FROM ecommerce.order_items;
+-- Total customers
+SELECT count(distinct customer_unique_id) FROM ecommerce.olist_customers_dataset;
+-- orders per customer
+SELECT customer_id,count(order_id) as total_orders 
+FROM ecommerce.orders 
+group by customer_id;
+-- top 10 customers by spending
+select o.customer_id,sum(oi.price) as spending from orders o
+join order_items oi
+on o.order_id=oi.order_id
+group by o.customer_id
+order by spending desc limit 10;
+--category wise sales
+select p.product_category_name,sum(oi.price) as sale from order_items oi
+join products p
+on oi.product_id=p.product_id
+group by product_category_name
+order by sale desc;
+-- monthly sales trend
+select Month(o.order_delivered_customer_date) as month_name, sum(oi.price) as sale 
+from orders o
+join order_items oi
+on oi.order_id=o.order_id
+group by month_name;
+-- Payment Method Analysis
+SELECT payment_type, sum(payment_value) as pay_value FROM order_payments
+group by payment_type
+order by pay_value;
+-- avg order value
+select round(avg(total_price),2) as avg_order_value from 
+(select order_id,sum(price) as total_price 
+from order_items
+group by order_id
+order by total_price desc)t ;
+-- top selling products
+select product_id,count(product_id) as sales from order_items 
+group by product_id
+order by sales desc limit 10;
+-- repeat customers
+select customer_id,count(customer_id) as number_of_orders from orders
+group by customer_id
+having number_of_orders>1;
+-- repeat v/s new customers
+select case
+      when number_of_orders>1 then 'repeat_Customer'
+      else 'new_customer'
+      end as customer_type,
+      count(*) as total_Customers
+from (
+select customer_id,count(customer_id) as number_of_orders from orders
+group by customer_id
+)t
+group by customer_type;
+-- orders per month
+select month(order_purchase_timestamp) as month_name,count(order_id) as order_number from orders
+group by month_name
+order by month_name;
+--  delivery time
+select order_id, DATEDIFF(order_delivered_customer_date,order_purchase_timestamp) as delivery_Time
+from orders;
+-- top 5 cities by sale
+select c.customer_city,sum(oi.price) as sale from order_items oi
+join orders o on oi.order_id=o.order_id
+join olist_customers_dataset c on c.customer_id=o.customer_id
+group by c.customer_city
+order by sale desc limit 5;
+-- Top 5 Categories by Average Rating
+SELECT p.product_category_name,
+       AVG(r.review_score) AS avg_rating
+FROM order_reviews r
+JOIN orders o ON r.order_id = o.order_id
+JOIN order_items oi ON o.order_id = oi.order_id
+JOIN products p ON oi.product_id = p.product_id
+GROUP BY p.product_category_name
+ORDER BY avg_rating DESC
+LIMIT 5;
+-- Top 5 Sellers by Revenue
+SELECT s.seller_id,
+       SUM(oi.price) AS total_revenue
+FROM order_items oi
+JOIN sellers s
+ON oi.seller_id = s.seller_id
+GROUP BY s.seller_id
+ORDER BY total_revenue DESC
+LIMIT 5;
